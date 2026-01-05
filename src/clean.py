@@ -58,9 +58,4 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
                     mask_keep = mask_keep | cat_mask
                 df = df[mask_keep]
 
-    # Sort rows by Category and Amount
-    sort_cols = [c for c in ["Category", "Amount"] if c in df.columns]
-    if sort_cols:
-        df = df.sort_values(by=sort_cols, ascending=[True]*len(sort_cols)).reset_index(drop=True)
-
     return df

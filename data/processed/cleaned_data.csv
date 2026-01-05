@@ -1,5 +1,10 @@
 Category,Amount,Description
+A,80.0,Chargeback
+A,95.0,Payment
 A,100.0,Payment
+A,120.0,Payment
 B,180.0,Refund
 B,200.0,Refund
+C,140.0,Purchase
+C,150.0,Purchase
 C,160.0,Purchase

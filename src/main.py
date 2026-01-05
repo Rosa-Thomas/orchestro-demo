@@ -4,6 +4,8 @@ from clean import clean_data
 from quality_checks import run_quality_checks
 from transform import compute_kpis
 from export import export_clean_data
+from sort import sort_data
+import pandas as pd
 from pathlib import Path
 
 def generate_report(quality, kpis, path="reports/quality_report.md"):
@@ -24,7 +26,8 @@ def main():
     kpis_raw = compute_kpis(df_raw)
     quality = run_quality_checks(df_clean)
     kpis = compute_kpis(df_clean)
-    export_clean_data(df_clean)
+    df_sorted = sort_data(df_clean)
+    export_clean_data(df_sorted)
     generate_report(quality, kpis)
     generate_report(quality_raw, kpis_raw, path="reports/quality_report_raw.md")
     print("Pipeline executed successfully.")

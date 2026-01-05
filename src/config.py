@@ -12,10 +12,20 @@ FILL_NA_STRATEGY = {
 # Category-specific numeric bounds
 CATEGORY_VALUE_BOUNDS = {
     "Amount": {
-        "A": (100, 110),
+        "A": (50, 200),
         "B": (100, 250),
-        "C": (160, 160),
+        "C": (60, 160),
     }
 }
  # Remove or set to nearest bound (clip) for out-of-bounds numeric values
 NUMERIC_BOUNDS_STRATEGY = "remove"  # or "clip"
+
+# Columns to sort by per dataset
+SORT_COLUMNS = {
+    "default": ["Category", "Amount"], 
+}
+
+# Sort order corresponding to SORT_COLUMNS (True=ascending, False=descending)
+SORT_ORDER = {
+    "default": [True, True],
+}
