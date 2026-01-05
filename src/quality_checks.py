@@ -1,18 +1,18 @@
-from config import STRING_BOUNDS, VALUE_BOUNDS, CATEGORY_VALUE_BOUNDS
+from config import WHITE_LIST, BLACK_LIST, VALUE_BOUNDS, CATEGORY_VALUE_BOUNDS
 
 def run_quality_checks(df):
     report = {}
 
-    # Missing values per column
+    # Missing values
     report["missing_values"] = df.isna().sum().to_dict()
 
     # Negative numeric values
     numeric = df.select_dtypes(include=['number'])
     report["negative_values"] = (numeric < 0).sum().to_dict()
 
-    # Invalid strings (categories or other string bounds)
+    # Invalid strings per WHITE_LIST
     report["invalid_strings"] = {}
-    for col, allowed_values in STRING_BOUNDS.items():
+    for col, allowed_values in WHITE_LIST.items():
         if col in df.columns:
             uniques = set(df[col].dropna().unique())
             allowed_set = set(allowed_values)
@@ -20,7 +20,17 @@ def run_quality_checks(df):
             if invalids:
                 report["invalid_strings"][col] = invalids
 
-    # Numeric values outside global VALUE_BOUNDS
+    # Forbidden strings per BLACK_LIST
+    for col, forbidden_values in BLACK_LIST.items():
+        if col in df.columns:
+            present_forbidden = sorted(set(df[col].dropna()) & set(forbidden_values))
+            if present_forbidden:
+                if col not in report["invalid_strings"]:
+                    report["invalid_strings"][col] = present_forbidden
+                else:
+                    report["invalid_strings"][col] += present_forbidden  # append to existing
+
+    # Numeric values outside global bounds
     report["out_of_bounds"] = {}
     for col, bounds in VALUE_BOUNDS.items():
         if col in df.columns:
@@ -28,12 +38,10 @@ def run_quality_checks(df):
             below_min = (df[col] < min_val).sum()
             above_max = (df[col] > max_val).sum()
             if below_min or above_max:
-                report["out_of_bounds"][col] = {
-                    "below_global_min": int(below_min),
-                    "above_global_max": int(above_max)
-                }
+                report["out_of_bounds"][col] = {"below_global_min": int(below_min),
+                                               "above_global_max": int(above_max)}
 
-    # Numeric values outside CATEGORY_VALUE_BOUNDS
+    # Numeric values outside category-specific bounds
     for col, cat_bounds in CATEGORY_VALUE_BOUNDS.items():
         if col in df.columns and "Category" in df.columns:
             out_of_bounds_cat = {}

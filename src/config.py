@@ -1,6 +1,11 @@
-STRING_BOUNDS = { 
+# Configuration for data cleaning and validation
+WHITE_LIST = { 
     "Category": ["A", "B", "C"],
 }
+BLACK_LIST = {
+    "Description": ["Invalid", "Unknown", "Chargeback"],
+}
+
 VALUE_BOUNDS = {
     "Amount": (0, 200),
 }

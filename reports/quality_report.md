@@ -7,6 +7,6 @@
 - out_of_bounds: {}
 
 ## KPIs
-- total_amount: 1225.0
-- avg_amount: 136.11111111111111
-- count_by_category: {'A': 4, 'C': 3, 'B': 2}
+- total_amount: 1145.0
+- avg_amount: 143.125
+- count_by_category: {'A': 3, 'C': 3, 'B': 2}
