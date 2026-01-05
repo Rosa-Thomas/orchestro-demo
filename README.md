@@ -6,9 +6,12 @@ It simulates workflows similar to Reveals’ Orchestro:
 - Data ingestion (CSV → dataframe)
 - Cleaning & normalization
 - Data quality checks
-- Transformation (KPI computation)
+- Transformation (Key Performance Indicators computation)
 - Report generation
 
 ## How to run
 pip install -r requirements.txt
 python src/main.py
+
+### How to define the cleaning
+Go to the config file > src/config.py
