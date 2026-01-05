@@ -1,0 +1,21 @@
+Category,Amount,Description
+A,100,Payment
+B,200,Refund
+C,150,Purchase
+A,,MissingAmount
+X,-50,InvalidCategory
+B,300,Refund
+C,175,Purchase
+A,120,Payment
+A,-80,Chargeback
+B,,MissingAmount
+C,160, Purchase
+X,0,Unknown
+A,100,Payment
+B,220, Refund
+C,,MissingAmount
+A,95,Payment
+X,-120,InvalidCategory
+B,180,Refund
+C,140,Purchase
+A,, MissingAmount
