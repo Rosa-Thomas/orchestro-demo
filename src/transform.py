@@ -1,5 +1,6 @@
 
 def compute_kpis(df):
+    #key performance indicators
     kpis = {}
     if "Amount" in df.columns:
         kpis["total_amount"] = df["Amount"].sum()
