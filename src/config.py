@@ -43,7 +43,7 @@ SORT_ORDER = {
 
 # Default paths for operational script 
 DEFAULT_PATHS = {
-    "input": "data/raw.csv",
-    "output": "data/cleaned.csv",
+    "input": "data/raw/sample_data.csv",
+    "output": "data/processed/cleaned_data.csv",
     "report": "reports/quality_report.md"
 }
