@@ -7,8 +7,7 @@
     "missing_Amount": 4
   },
   "values_clipped": {
-    "Amount": 2,
-    "Amount_category_bounds": 1
+    "Amount": 2
   },
   "values_filled_na": {
     "Amount": 0

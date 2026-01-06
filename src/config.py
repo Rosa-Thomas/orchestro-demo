@@ -21,7 +21,6 @@ COLUMNS = {
             "category_bounds": {   # optional per-category bounds
                 "A": (50, 200),
                 "B": (100, 250),
-                "C": (60, 160)
             }
         }
     }
