@@ -1,36 +1,50 @@
-# Configuration for data cleaning and validation
-WHITE_LIST = { 
-    "Category": ["A", "B", "C"],
-}
-BLACK_LIST = {
-    "Description": ["Invalid", "Unknown", "Chargeback"],
-}
-
-VALUE_BOUNDS = {
-    "Amount": (0, 200),
-}
-# Strategy (median, mean, remove) for filling NA values per column
-FILL_NA_STRATEGY = {
-    "Amount": "remove",
-}
-
-# Category-specific numeric bounds
-CATEGORY_VALUE_BOUNDS = {
+ 
+# Column-level rules (human-readable)
+COLUMNS = {
+    "Category": {
+        "type": "string",
+        "rules": {
+            "white_list": ["A", "B", "C"]
+        }
+    },
+    "Description": {
+        "type": "string",
+        "rules": {
+            "black_list": ["Invalid", "Unknown", "Chargeback"]
+        }
+    },
     "Amount": {
-        "A": (50, 200),
-        "B": (100, 250),
-        "C": (60, 160),
+        "type": "numeric",
+        "rules": {
+            "fill_na": "remove",  # median | mean | remove | ignore
+            "bounds": (0, 200),   # global bounds
+            "category_bounds": {   # optional per-category bounds
+                "A": (50, 200),
+                "B": (100, 250),
+                "C": (60, 160)
+            }
+        }
     }
 }
- # Remove or set to nearest bound (clip) for out-of-bounds numeric values
-NUMERIC_BOUNDS_STRATEGY = "remove"  # or "clip"
-
-# Columns to sort by per dataset
-SORT_COLUMNS = {
-    "default": ["Category", "Amount"], 
+ 
+# Global behavior switches
+BEHAVIOR = {
+    "numeric_bounds_strategy": "clip",  # remove | clip | ignore
+    "string_violations_strategy": "remove",  # remove | flag
 }
 
-# Sort order corresponding to SORT_COLUMNS (True=ascending, False=descending)
+# Sorting rules
+SORT_COLUMNS = {
+    "default": ["Category", "Amount"]
+}
+
 SORT_ORDER = {
-    "default": [True, True],
+    "default": [True, True]  # True=ascending, False=descending
+}
+
+# Default paths for operational script 
+DEFAULT_PATHS = {
+    "input": "data/raw.csv",
+    "output": "data/cleaned.csv",
+    "report": "reports/quality_report.md"
 }
