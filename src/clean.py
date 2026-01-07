@@ -1,70 +1,91 @@
 import pandas as pd
-from dataclasses import dataclass, field
-from config import (
-    COLUMNS,
-    BEHAVIOR,
-    SORT_COLUMNS,
-    SORT_ORDER,
-    REMOVAL_REASON_COLUMN,
-)
+from dataclasses import dataclass
+from config import COLUMNS, BEHAVIOR, REMOVAL_REASON_COLUMN
+
 
 @dataclass
 class CleaningStats:
-    rows_initial: int = 0
-    rows_final: int = 0
-    rows_removed: int = 0
-    removals_by_reason: dict = field(default_factory=dict)
-
-def mark_for_removal(df, mask, reason):
-    df.loc[mask, REMOVAL_REASON_COLUMN] = (
-        df.loc[mask, REMOVAL_REASON_COLUMN]
-        .fillna(reason)
-        .where(
-            df.loc[mask, REMOVAL_REASON_COLUMN].isna(),
-            df.loc[mask, REMOVAL_REASON_COLUMN] + " | " + reason
-        )
-    )
+    rows_input: int
+    rows_output: int
+    rows_removed: int
 
 
 def clean_data(df: pd.DataFrame):
     df = df.copy()
-    stats = CleaningStats()
-    stats.rows_initial = len(df)
+    rows_input = len(df)
 
-    df[REMOVAL_REASON_COLUMN] = pd.NA
+    if REMOVAL_REASON_COLUMN not in df.columns:
+        df[REMOVAL_REASON_COLUMN] = ""
+
+    removed_rows = []
+
+    def mark(mask, reason):
+        nonlocal removed_rows
+        affected = df.loc[mask].copy()
+        if not affected.empty:
+            affected[REMOVAL_REASON_COLUMN] = reason
+            removed_rows.append(affected)
+            df.loc[mask, REMOVAL_REASON_COLUMN] = reason
+
+    string_strategy = BEHAVIOR.get("string_violations_strategy", "remove")
+    numeric_strategy = BEHAVIOR.get("numeric_bounds_strategy", "remove")
+
     df.drop_duplicates(inplace=True)
 
     for col, spec in COLUMNS.items():
         if col not in df.columns:
             continue
 
+        col_type = spec.get("type")
         rules = spec.get("rules", {})
-        col_type = spec.get("type", "string")
 
         if col_type == "string":
+            df[col] = df[col].astype(str).str.strip()
+
             if "white_list" in rules:
-                mask = ~df[col].isin(rules["white_list"])
-                mark_for_removal(df, mask, f"{col}: not in whitelist")
+                allowed = rules["white_list"]
+                mask = ~df[col].isin(allowed)
+                if mask.any():
+                    mark(mask, f"{col}: not in whitelist")
+                    if string_strategy == "remove":
+                        df = df[~mask]
 
             if "black_list" in rules:
-                mask = df[col].isin(rules["black_list"])
-                mark_for_removal(df, mask, f"{col}: blacklisted value")
+                forbidden = rules["black_list"]
+                mask = df[col].isin(forbidden)
+                if mask.any():
+                    mark(mask, f"{col}: in blacklist")
+                    if string_strategy == "remove":
+                        df = df[~mask]
 
         if col_type == "numeric":
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+            fill_na = rules.get("fill_na", "ignore")
+            if fill_na == "remove":
+                mask = df[col].isna()
+                mark(mask, f"{col}: missing value")
+                df = df[~mask]
+            elif fill_na == "median":
+                if "Category" in df.columns:
+                    df[col] = df.groupby("Category")[col].transform(
+                        lambda x: x.fillna(x.median())
+                    )
+                else:
+                    df[col] = df[col].fillna(df[col].median())
+            elif fill_na == "mean":
+                df[col] = df[col].fillna(df[col].mean())
+
             df[col] = df[col].abs()
 
-            if rules.get("fill_na") == "remove":
-                mask = df[col].isna()
-                mark_for_removal(df, mask, f"{col}: missing value")
-
-            if "bounds" in rules and BEHAVIOR["numeric_bounds_strategy"] == "remove":
+            if "bounds" in rules and numeric_strategy != "ignore":
                 min_val, max_val = rules["bounds"]
-                mask = (df[col] < min_val) | (df[col] > max_val)
-                mark_for_removal(
-                    df,
-                    mask,
-                    f"{col}: outside global bounds [{min_val}, {max_val}]",
-                )
+                if numeric_strategy == "clip":
+                    df[col] = df[col].clip(min_val, max_val)
+                elif numeric_strategy == "remove":
+                    mask = (df[col] < min_val) | (df[col] > max_val)
+                    mark(mask, f"{col}: outside global bounds")
+                    df = df[~mask]
 
             if "category_bounds" in rules and "Category" in df.columns:
                 for cat, (min_val, max_val) in rules["category_bounds"].items():
@@ -72,35 +93,25 @@ def clean_data(df: pd.DataFrame):
                         (df["Category"] == cat)
                         & ((df[col] < min_val) | (df[col] > max_val))
                     )
-                    if BEHAVIOR["numeric_bounds_strategy"] == "remove":
-                        mark_for_removal(
-                            df,
-                            mask,
-                            f"{col}: outside bounds for Category {cat} [{min_val}, {max_val}]",
-                        )
+                    if mask.any():
+                        mark(mask, f"{col}: outside bounds for category {cat}")
+                        if numeric_strategy == "clip":
+                            df.loc[df["Category"] == cat, col] = df.loc[
+                                df["Category"] == cat, col
+                            ].clip(min_val, max_val)
+                        elif numeric_strategy == "remove":
+                            df = df[~mask]
 
-    removed_df = df[df[REMOVAL_REASON_COLUMN].notna()].copy()
-    clean_df = df[df[REMOVAL_REASON_COLUMN].isna()].drop(
-        columns=[REMOVAL_REASON_COLUMN]
+    df_removed = (
+        pd.concat(removed_rows, ignore_index=True)
+        if removed_rows
+        else pd.DataFrame(columns=df.columns)
     )
 
-    stats.rows_final = len(clean_df)
-    stats.rows_removed = len(removed_df)
+    stats = CleaningStats(
+        rows_input=rows_input,
+        rows_output=len(df),
+        rows_removed=len(df_removed),
+    )
 
-    if not removed_df.empty:
-        stats.removals_by_reason = (
-            removed_df[REMOVAL_REASON_COLUMN]
-            .str.split(" \\| ")
-            .explode()
-            .value_counts()
-            .to_dict()
-        )
-
-    sort_cols = [c for c in SORT_COLUMNS["default"] if c in clean_df.columns]
-    if sort_cols:
-        clean_df = clean_df.sort_values(
-            by=sort_cols,
-            ascending=SORT_ORDER["default"][:len(sort_cols)],
-        ).reset_index(drop=True)
-
-    return clean_df, removed_df, stats
+    return df.reset_index(drop=True), df_removed.reset_index(drop=True), stats

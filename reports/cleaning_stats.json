@@ -1,12 +1,5 @@
 {
-  "rows_initial": 20,
-  "rows_final": 9,
-  "rows_removed": 10,
-  "removals_by_reason": {
-    "Amount: missing value": 4,
-    "Category: not in whitelist": 3,
-    "Amount: outside global bounds [0, 200]": 2,
-    "Description: blacklisted value": 2,
-    "Amount: outside bounds for Category B [100, 250]": 1
-  }
+  "rows_input": 20,
+  "rows_output": 15,
+  "rows_removed": 9
 }

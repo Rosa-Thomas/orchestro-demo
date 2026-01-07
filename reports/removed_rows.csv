@@ -1,0 +1,9 @@
+Category,Amount,Description,_removal_reason
+A,,MissingAmount,Amount: missing value
+X,50.0,InvalidCategory,Category: not in whitelist
+A,80.0,Chargeback,Description: blacklisted value
+B,,MissingAmount,Amount: missing value
+X,0.0,Unknown,Category: not in whitelist | Description: blacklisted value
+C,,MissingAmount,Amount: missing value
+X,120.0,InvalidCategory,Category: not in whitelist
+A,, MissingAmount,Amount: missing value

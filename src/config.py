@@ -31,10 +31,9 @@ REMOVAL_REASON_COLUMN = "Removal Reason"
  
 # Global behavior switches
 BEHAVIOR = {
-    "numeric_bounds_strategy": "remove",  # remove | clip | ignore
-    "string_violations_strategy": "remove",  # remove | flag
+    "numeric_bounds_strategy": "clip",      # remove | clip | ignore
+    "string_violations_strategy": "flag",   # remove | flag | ignore
 }
-
 # Sorting rules
 SORT_COLUMNS = {
     "default": ["Category", "Amount"]

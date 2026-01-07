@@ -1,10 +1,16 @@
-Category,Amount,Description
-A,95.0,Payment
-A,100.0,Payment
-A,120.0,Payment
-B,180.0,Refund
-B,200.0,Refund
-C,140.0,Purchase
-C,150.0,Purchase
-C,160.0, Purchase
-C,175.0,Purchase
+Category,Amount,Description,Removal Reason
+A,80.0,Chargeback,Description: in blacklist
+A,95.0,Payment,
+A,100.0,Payment,
+A,120.0,Payment,
+B,180.0,Refund,
+B,200.0,Refund,
+B,200.0,Refund,
+B,200.0,Refund,
+C,140.0,Purchase,
+C,150.0,Purchase,
+C,160.0,Purchase,
+C,175.0,Purchase,
+X,0.0,Unknown,Description: in blacklist
+X,50.0,InvalidCategory,Category: not in whitelist
+X,120.0,InvalidCategory,Category: not in whitelist
