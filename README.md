@@ -13,8 +13,8 @@ It simulates workflows similar to Reveals’ Orchestro:
 pip install -r requirements.txt
 python src/main.py
 
-### How to define the cleaning
+## How to define the cleaning
 src/config.py
 
-#### Recommended Extension
+### Recommended Extension
 https://marketplace.visualstudio.com/items?itemName=ReprEng.csv (for readability of csv files)

@@ -31,9 +31,10 @@ def main():
     kpis_raw = compute_kpis(df_raw)
     kpis_clean = compute_kpis(df_clean)
 
-    df_sorted = sort_data(df_clean)
+    df_clean = sort_data(df_clean)
+    df_removed = sort_data(df_removed)
 
-    export_clean_data(df_sorted, DEFAULT_PATHS["output_clean"])
+    export_clean_data(df_clean, DEFAULT_PATHS["output_clean"])
 
     Path(DEFAULT_PATHS["output_removed"]).parent.mkdir(parents=True, exist_ok=True)
     df_removed.to_csv(DEFAULT_PATHS["output_removed"], index=False)

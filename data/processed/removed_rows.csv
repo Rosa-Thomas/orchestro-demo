@@ -1,10 +1,10 @@
 Category,Amount,Description,Removal Reason
-X,-50.0,InvalidCategory,Category: not in whitelist
-X,0.0,Unknown,Category: not in whitelist
-X,-120.0,InvalidCategory,Category: not in whitelist
 A,-80.0,Chargeback,Description: in blacklist
-X,0.0,Unknown,Description: in blacklist
+A,,MissingAmount,Amount: missing value
 A,,MissingAmount,Amount: missing value
 B,,MissingAmount,Amount: missing value
 C,,MissingAmount,Amount: missing value
-A,,MissingAmount,Amount: missing value
+X,-120.0,InvalidCategory,Category: not in whitelist
+X,-50.0,InvalidCategory,Category: not in whitelist
+X,0.0,Unknown,Category: not in whitelist
+X,0.0,Unknown,Description: in blacklist
