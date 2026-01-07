@@ -1,20 +1,37 @@
 import pandas as pd
 from dataclasses import dataclass, field
-from config import COLUMNS, BEHAVIOR, SORT_COLUMNS, SORT_ORDER
+from config import (
+    COLUMNS,
+    BEHAVIOR,
+    SORT_COLUMNS,
+    SORT_ORDER,
+    REMOVAL_REASON_COLUMN,
+)
 
 @dataclass
 class CleaningStats:
     rows_initial: int = 0
     rows_final: int = 0
-    rows_dropped: dict = field(default_factory=dict)
-    values_clipped: dict = field(default_factory=dict)
-    values_filled_na: dict = field(default_factory=dict)
+    rows_removed: int = 0
+    removals_by_reason: dict = field(default_factory=dict)
 
-def clean_data(df: pd.DataFrame) -> tuple[pd.DataFrame, CleaningStats]:
+def mark_for_removal(df, mask, reason):
+    df.loc[mask, REMOVAL_REASON_COLUMN] = (
+        df.loc[mask, REMOVAL_REASON_COLUMN]
+        .fillna(reason)
+        .where(
+            df.loc[mask, REMOVAL_REASON_COLUMN].isna(),
+            df.loc[mask, REMOVAL_REASON_COLUMN] + " | " + reason
+        )
+    )
+
+
+def clean_data(df: pd.DataFrame):
     df = df.copy()
     stats = CleaningStats()
     stats.rows_initial = len(df)
 
+    df[REMOVAL_REASON_COLUMN] = pd.NA
     df.drop_duplicates(inplace=True)
 
     for col, spec in COLUMNS.items():
@@ -24,88 +41,66 @@ def clean_data(df: pd.DataFrame) -> tuple[pd.DataFrame, CleaningStats]:
         rules = spec.get("rules", {})
         col_type = spec.get("type", "string")
 
-        
-        # String Columns        
         if col_type == "string":
-            before = len(df)
             if "white_list" in rules:
-                df = df[df[col].isin(rules["white_list"])]
+                mask = ~df[col].isin(rules["white_list"])
+                mark_for_removal(df, mask, f"{col}: not in whitelist")
+
             if "black_list" in rules:
-                df = df[~df[col].isin(rules["black_list"])]
-            dropped = before - len(df)
-            if dropped > 0:
-                stats.rows_dropped[col] = dropped
+                mask = df[col].isin(rules["black_list"])
+                mark_for_removal(df, mask, f"{col}: blacklisted value")
 
-        
-        # Numeric Columns    
-        elif col_type == "numeric":
-            # Fill missing values
-            if "fill_na" in rules:
-                strategy = rules["fill_na"]
-                na_count = df[col].isna().sum()
-                if na_count > 0:
-                    if strategy == "median":
-                        if "Category" in df.columns:
-                            df[col] = df.groupby("Category")[col].transform(lambda x: x.fillna(x.median()))
-                        else:
-                            df[col] = df[col].fillna(df[col].median())
-                    elif strategy == "mean":
-                        if "Category" in df.columns:
-                            df[col] = df.groupby("Category")[col].transform(lambda x: x.fillna(x.mean()))
-                        else:
-                            df[col] = df[col].fillna(df[col].mean())
-                    elif strategy == "remove":
-                        before = len(df)
-                        df = df[df[col].notna()]
-                        stats.rows_dropped[f"missing_{col}"] = before - len(df)
-                        na_count = 0  # Already removed
-                    stats.values_filled_na[col] = int(na_count)
-
-            # Convert to absolute values
+        if col_type == "numeric":
             df[col] = df[col].abs()
 
-            # Apply global bounds
-            if "bounds" in rules:
+            if rules.get("fill_na") == "remove":
+                mask = df[col].isna()
+                mark_for_removal(df, mask, f"{col}: missing value")
+
+            if "bounds" in rules and BEHAVIOR["numeric_bounds_strategy"] == "remove":
                 min_val, max_val = rules["bounds"]
-                if BEHAVIOR.get("numeric_bounds_strategy") == "clip":
-                    below = (df[col] < min_val).sum()
-                    above = (df[col] > max_val).sum()
-                    stats.values_clipped[col] = int(below + above)
-                    df[col] = df[col].clip(lower=min_val, upper=max_val)
-                elif BEHAVIOR.get("numeric_bounds_strategy") == "remove":
-                    before = len(df)
-                    df = df[(df[col] >= min_val) & (df[col] <= max_val)]
-                    stats.rows_dropped[f"{col}_out_of_bounds"] = before - len(df)
+                mask = (df[col] < min_val) | (df[col] > max_val)
+                mark_for_removal(
+                    df,
+                    mask,
+                    f"{col}: outside global bounds [{min_val}, {max_val}]",
+                )
 
-            # Apply category-specific bounds
             if "category_bounds" in rules and "Category" in df.columns:
-                cat_bounds = rules["category_bounds"]
-                if BEHAVIOR.get("numeric_bounds_strategy") == "clip":
-                    clipped_total = 0
-                    for cat, (min_val, max_val) in cat_bounds.items():
-                        mask = df["Category"] == cat
-                        below = (df.loc[mask, col] < min_val).sum()
-                        above = (df.loc[mask, col] > max_val).sum()
-                        clipped_total += below + above
-                        df.loc[mask, col] = df.loc[mask, col].clip(lower=min_val, upper=max_val)
-                    if clipped_total > 0:
-                        stats.values_clipped[f"{col}_category_bounds"] = int(clipped_total)
-                elif BEHAVIOR.get("numeric_bounds_strategy") == "remove":
-                    mask_keep = pd.Series(False, index=df.index)
-                    for cat, (min_val, max_val) in cat_bounds.items():
-                        cat_mask = (df["Category"] == cat) & (df[col] >= min_val) & (df[col] <= max_val)
-                        mask_keep = mask_keep | cat_mask
-                    before = len(df)
-                    df = df[mask_keep]
-                    stats.rows_dropped[f"{col}_category_bounds"] = before - len(df)
+                for cat, (min_val, max_val) in rules["category_bounds"].items():
+                    mask = (
+                        (df["Category"] == cat)
+                        & ((df[col] < min_val) | (df[col] > max_val))
+                    )
+                    if BEHAVIOR["numeric_bounds_strategy"] == "remove":
+                        mark_for_removal(
+                            df,
+                            mask,
+                            f"{col}: outside bounds for Category {cat} [{min_val}, {max_val}]",
+                        )
 
-    
-    # Sorting
-    sort_cols = SORT_COLUMNS.get("default", [])
-    sort_order = SORT_ORDER.get("default", [True]*len(sort_cols))
-    sort_cols = [c for c in sort_cols if c in df.columns]
+    removed_df = df[df[REMOVAL_REASON_COLUMN].notna()].copy()
+    clean_df = df[df[REMOVAL_REASON_COLUMN].isna()].drop(
+        columns=[REMOVAL_REASON_COLUMN]
+    )
+
+    stats.rows_final = len(clean_df)
+    stats.rows_removed = len(removed_df)
+
+    if not removed_df.empty:
+        stats.removals_by_reason = (
+            removed_df[REMOVAL_REASON_COLUMN]
+            .str.split(" \\| ")
+            .explode()
+            .value_counts()
+            .to_dict()
+        )
+
+    sort_cols = [c for c in SORT_COLUMNS["default"] if c in clean_df.columns]
     if sort_cols:
-        df = df.sort_values(by=sort_cols, ascending=sort_order[:len(sort_cols)]).reset_index(drop=True)
+        clean_df = clean_df.sort_values(
+            by=sort_cols,
+            ascending=SORT_ORDER["default"][:len(sort_cols)],
+        ).reset_index(drop=True)
 
-    stats.rows_final = len(df)
-    return df, stats
+    return clean_df, removed_df, stats

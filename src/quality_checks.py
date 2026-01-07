@@ -1,5 +1,5 @@
 import pandas as pd
-from config import COLUMNS, BEHAVIOR
+from config import COLUMNS
 
 def run_quality_checks(df: pd.DataFrame) -> dict:
     report = {}

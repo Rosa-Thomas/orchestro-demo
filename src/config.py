@@ -25,10 +25,13 @@ COLUMNS = {
         }
     }
 }
+
+# Column to record removal reasons
+REMOVAL_REASON_COLUMN = "Removal Reason"
  
 # Global behavior switches
 BEHAVIOR = {
-    "numeric_bounds_strategy": "clip",  # remove | clip | ignore
+    "numeric_bounds_strategy": "remove",  # remove | clip | ignore
     "string_violations_strategy": "remove",  # remove | flag
 }
 
@@ -44,6 +47,13 @@ SORT_ORDER = {
 # Default paths for operational script 
 DEFAULT_PATHS = {
     "input": "data/raw/sample_data.csv",
-    "output": "data/processed/cleaned_data.csv",
-    "report": "reports/quality_report.md"
+
+    "output_clean": "data/processed/cleaned_data.csv",
+    "output_removed": "data/processed/removed_rows.csv",
+
+    "report_clean": "reports/quality_report.md",
+    "report_raw": "reports/quality_report_raw.md",
+
+    "cleaning_stats": "reports/cleaning_stats.json",
 }
+

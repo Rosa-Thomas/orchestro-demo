@@ -1,0 +1,11 @@
+Category,Amount,Description,Removal Reason
+A,,MissingAmount,Amount: missing value
+X,50.0,InvalidCategory,Category: not in whitelist
+B,300.0,Refund,"Amount: outside global bounds [0, 200] | Amount: outside bounds for Category B [100, 250]"
+A,80.0,Chargeback,Description: blacklisted value
+B,,MissingAmount,Amount: missing value
+X,0.0,Unknown,Category: not in whitelist | Description: blacklisted value
+B,220.0, Refund,"Amount: outside global bounds [0, 200]"
+C,,MissingAmount,Amount: missing value
+X,120.0,InvalidCategory,Category: not in whitelist
+A,, MissingAmount,Amount: missing value

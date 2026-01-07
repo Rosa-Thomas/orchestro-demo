@@ -14,4 +14,7 @@ pip install -r requirements.txt
 python src/main.py
 
 ### How to define the cleaning
-Go to the config file > src/config.py
+src/config.py
+
+#### Recommended Extension
+https://marketplace.visualstudio.com/items?itemName=ReprEng.csv (for readability of csv files)
