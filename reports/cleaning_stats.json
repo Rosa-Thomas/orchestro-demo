@@ -1,6 +1,6 @@
 {
   "rows_input": 20,
-  "rows_output": 16,
-  "rows_removed": 4,
-  "rows_flagged": 4
+  "rows_output": 11,
+  "rows_removed": 9,
+  "rows_flagged": 1
 }

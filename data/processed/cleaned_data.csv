@@ -6,12 +6,7 @@ ID,Category,Amount,Description,Removal Reason,Flag Reason
 8,A,120.0,Payment,,
 18,B,180.0,Refund,,
 2,B,200.0,Refund,,
-6,B,200.0,Refund,,
-14,B,200.0,Refund,,
 19,C,140.0,Purchase,,
 3,C,150.0,Purchase,,
 11,C,160.0,Purchase,,
 7,C,175.0,Purchase,,
-12,X,0.0,Unknown,,Category: not in whitelist | Description: in blacklist
-5,X,50.0,InvalidCategory,,Category: not in whitelist
-17,X,120.0,InvalidCategory,,Category: not in whitelist

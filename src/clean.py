@@ -1,6 +1,11 @@
 import pandas as pd
 from dataclasses import dataclass
-from config import COLUMNS, BEHAVIOR, REMOVAL_REASON_COLUMN, FLAG_REASON_COLUMN
+from config import (
+    COLUMNS,
+    DEFAULT_BEHAVIOR,
+    REMOVAL_REASON_COLUMN,
+    FLAG_REASON_COLUMN,
+)
 
 
 @dataclass
@@ -17,19 +22,25 @@ class CleaningStats:
         self.rows_flagged = int(self.rows_flagged)
 
 
+def resolve_behavior(spec, col_type, key):
+    return (
+        spec.get("behavior", {}).get(key)
+        or DEFAULT_BEHAVIOR.get(col_type, {}).get(key)
+        or "ignore"
+    )
+
+
 def clean_data(df: pd.DataFrame):
     df = df.copy()
     rows_input = len(df)
 
-    # Initialize reason columns
     for col in [REMOVAL_REASON_COLUMN, FLAG_REASON_COLUMN]:
         if col not in df.columns:
             df[col] = ""
 
-    removed_rows_list = []
+    removed_rows = []
 
-    # Helper to append reasons safely
-    def append_reason(df, mask, column, reason):
+    def append_reason(mask, column, reason):
         for idx in df.index[mask]:
             existing = df.at[idx, column]
             if not existing:
@@ -39,30 +50,22 @@ def clean_data(df: pd.DataFrame):
                 if reason not in reasons:
                     df.at[idx, column] = existing + " | " + reason
 
-    # Helper to handle violations
-    def handle_violation(df, mask, reason, action):
+    def handle_violation(mask, reason, action):
+        nonlocal df, removed_rows
+
         if not mask.any():
-            return df
+            return
 
         if action == "remove":
-            append_reason(df, mask, REMOVAL_REASON_COLUMN, reason)
-            removed_rows_list.append(df.loc[mask].copy())  # save removed rows
-            return df[~mask]
+            append_reason(mask, REMOVAL_REASON_COLUMN, reason)
+            removed_rows.append(df.loc[mask].copy())
+            df = df.loc[~mask]
 
         elif action == "flag":
-            append_reason(df, mask, FLAG_REASON_COLUMN, reason)
-            return df
+            append_reason(mask, FLAG_REASON_COLUMN, reason)
 
-        # ignore
-        return df
-
-    string_strategy = BEHAVIOR.get("string_violations_strategy", "remove")
-    numeric_strategy = BEHAVIOR.get("numeric_bounds_strategy", "remove")
-
-    # Drop duplicates
     df.drop_duplicates(inplace=True)
 
-    # Process each column
     for col, spec in COLUMNS.items():
         if col not in df.columns:
             continue
@@ -73,78 +76,86 @@ def clean_data(df: pd.DataFrame):
         if col_type == "string":
             df[col] = df[col].astype(str).str.strip()
 
-            # White list
+            violation_action = resolve_behavior(spec, "string", "violation")
+
             if "white_list" in rules:
                 mask = ~df[col].isin(rules["white_list"])
-                df = handle_violation(df, mask, f"{col}: not in whitelist", string_strategy)
+                handle_violation(mask, f"{col}: not in whitelist", violation_action)
 
-            # Black list
             if "black_list" in rules:
                 mask = df[col].isin(rules["black_list"])
-                df = handle_violation(df, mask, f"{col}: in blacklist", string_strategy)
+                handle_violation(mask, f"{col}: in blacklist", violation_action)
 
-            # Substring rules
             for rule_name in ["contains", "starts_with", "ends_with", "regex"]:
                 if rule_name in rules:
-                    values = rules[rule_name]
-                    for value in values:
+                    for value in rules[rule_name]:
                         if rule_name == "contains":
                             mask = df[col].str.contains(value, na=False)
-                            reason_text = f"{col}: contains '{value}'"
+                            reason = f"{col}: contains '{value}'"
                         elif rule_name == "starts_with":
                             mask = df[col].str.startswith(value, na=False)
-                            reason_text = f"{col}: starts with '{value}'"
+                            reason = f"{col}: starts with '{value}'"
                         elif rule_name == "ends_with":
                             mask = df[col].str.endswith(value, na=False)
-                            reason_text = f"{col}: ends with '{value}'"
-                        elif rule_name == "regex":
+                            reason = f"{col}: ends with '{value}'"
+                        else:
                             mask = df[col].str.match(value, na=False)
-                            reason_text = f"{col}: matches regex '{value}'"
-                        df = handle_violation(df, mask, reason_text, string_strategy)
+                            reason = f"{col}: matches regex '{value}'"
+
+                        handle_violation(mask, reason, violation_action)
 
         elif col_type == "numeric":
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-            # Fill missing
+            missing_action = resolve_behavior(spec, "numeric", "missing")
+            bounds_action = resolve_behavior(spec, "numeric", "bounds")
+
             fill_na = rules.get("fill_na", "ignore")
             if fill_na == "remove":
                 mask = df[col].isna()
-                df = handle_violation(df, mask, f"{col}: missing value", "remove")
+                handle_violation(mask, f"{col}: missing value", "remove")
             elif fill_na == "median":
                 if "Category" in df.columns:
-                    df[col] = df.groupby("Category")[col].transform(lambda x: x.fillna(x.median()))
+                    df[col] = df.groupby("Category")[col].transform(
+                        lambda x: x.fillna(x.median())
+                    )
                 else:
                     df[col] = df[col].fillna(df[col].median())
             elif fill_na == "mean":
                 df[col] = df[col].fillna(df[col].mean())
 
-            # Absolute values
             df[col] = df[col].abs()
 
-            # Global bounds
-            if "bounds" in rules and numeric_strategy != "ignore":
+            if "bounds" in rules and bounds_action != "ignore":
                 min_val, max_val = rules["bounds"]
-                if numeric_strategy == "clip":
+                if bounds_action == "clip":
                     df[col] = df[col].clip(min_val, max_val)
-                elif numeric_strategy == "remove":
+                elif bounds_action == "remove":
                     mask = (df[col] < min_val) | (df[col] > max_val)
-                    df = handle_violation(df, mask, f"{col}: outside global bounds", "remove")
+                    handle_violation(mask, f"{col}: outside global bounds", "remove")
 
-            # Category-specific bounds
             if "category_bounds" in rules and "Category" in df.columns:
                 for cat, (min_val, max_val) in rules["category_bounds"].items():
-                    mask = (df["Category"] == cat) & ((df[col] < min_val) | (df[col] > max_val))
-                    if mask.any():
-                        reason_text = f"{col}: outside bounds for category {cat}"
-                        if numeric_strategy == "clip":
-                            df.loc[df["Category"] == cat, col] = df.loc[df["Category"] == cat, col].clip(min_val, max_val)
-                        elif numeric_strategy == "remove":
-                            df = handle_violation(df, mask, reason_text, "remove")
+                    mask = (
+                        (df["Category"] == cat)
+                        & ((df[col] < min_val) | (df[col] > max_val))
+                    )
 
-    # Final clean / removed separation
+                    if bounds_action == "clip":
+                        df.loc[df["Category"] == cat, col] = df.loc[
+                            df["Category"] == cat, col
+                        ].clip(min_val, max_val)
+                    elif bounds_action == "remove":
+                        handle_violation(
+                            mask,
+                            f"{col}: outside bounds for category {cat}",
+                            "remove",
+                        )
+
     df_clean = df.reset_index(drop=True)
-    if removed_rows_list:
-        df_removed = pd.concat(removed_rows_list, ignore_index=True)
+
+    if removed_rows:
+        df_removed = pd.concat(removed_rows, ignore_index=True)
     else:
         df_removed = pd.DataFrame(columns=df.columns)
 
