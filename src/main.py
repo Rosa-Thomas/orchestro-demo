@@ -31,6 +31,7 @@ def main():
     kpis_raw = compute_kpis(df_raw)
     kpis_clean = compute_kpis(df_clean)
 
+    df_raw_sorted = sort_data(df_raw)
     df_clean = sort_data(df_clean)
     df_removed = sort_data(df_removed)
 

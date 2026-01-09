@@ -1,10 +1,5 @@
-Category,Amount,Description,Removal Reason
-A,-80.0,Chargeback,Description: in blacklist
-A,,MissingAmount,Amount: missing value
-A,,MissingAmount,Amount: missing value
-B,,MissingAmount,Amount: missing value
-C,,MissingAmount,Amount: missing value
-X,-120.0,InvalidCategory,Category: not in whitelist
-X,-50.0,InvalidCategory,Category: not in whitelist
-X,0.0,Unknown,Category: not in whitelist
-X,0.0,Unknown,Description: in blacklist
+ID,Category,Amount,Description,Removal Reason,Flag Reason
+4,A,,MissingAmount,Amount: missing value,
+20,A,,MissingAmount,Amount: missing value,
+10,B,,MissingAmount,Amount: missing value,
+15,C,,MissingAmount,Amount: missing value,

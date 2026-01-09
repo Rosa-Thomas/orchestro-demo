@@ -1,6 +1,12 @@
  
 # Column-level rules (human-readable)
 COLUMNS = {
+    "ID": {
+        "type": "numeric",
+        "rules": {
+            "fill_na": "remove"  # median | mean | remove | ignore
+        }
+    },
     "Category": {
         "type": "string",
         "rules": {
@@ -25,9 +31,10 @@ COLUMNS = {
         }
     }
 }
-
-# Column to record removal reasons
+# Special column names for marking removed/flagged rows
 REMOVAL_REASON_COLUMN = "Removal Reason"
+FLAG_REASON_COLUMN = "Flag Reason"
+
  
 # Global behavior switches
 BEHAVIOR = {
