@@ -1,21 +1,48 @@
-ID,Category,Amount,Description
-1,A,100,Payment
-2,B,200,Refund
-3,C,150,Purchase
-4,A,,MissingAmount
-5,X,-50,InvalidCategory
-6,B,300,Refund
-7,C,175,Purchase
-8,A,120,Payment
-9,A,-80,Chargeback
-10,B,,MissingAmount
-11,C,160, Purchase
-12,X,0,Unknown
-13,A,100,Payment
-14,B,220, Refund
-15,C,,MissingAmount
-16,A,95,Payment
-17,X,-120,InvalidCategory
-18,B,180,Refund
-19,C,140,Purchase
-20,A,, MissingAmount
+ID,Category,Description,Amount,Tax,Notes
+1,A,Payment OK,25,10,all good
+2,B,Payment OK,60,15,normal
+3,A,Payment OK,5,5,low amount
+4,A,Payment OK,200,10,too high
+5,B,Payment OK,30,40,tax too high
+6,B,Payment OK,80,,missing tax
+7,A,Payment OK,,5,missing amount
+8,,Payment OK,30,5,missing category
+9,A,Invalid,30,5,blacklisted description
+10,B,Chargeback,50,10,blacklisted description
+11,A,ERR001 Payment,40,5,regex fail
+12,B,Payment FAIL,50,5,regex fail
+13,A,test payment,40,5,contains test
+14,AX,Payment OK,30,5,contains X in category
+15,BX,Payment OK,50,5,contains X in category
+16,A,Payment OK,5,5,bad
+17,A,Payment OK,60,5,error occurred
+18,B,Payment OK,50,5,!starts bad
+19,B,Payment OK,50,5,ends bad?
+20,A,Payment OK,15,35,tax too high
+21,A,Payment OK,45,25,ok
+22,B,Payment OK,110,10,over B bounds
+23,B,Payment OK,10,5,under B bounds
+24,A,Payment OK,55,10,over A bounds
+25,A,Payment OK,9,5,under A bounds
+26,A,Payment OK,10,0,edge valid
+27,B,Payment OK,40,30,edge valid
+28,B,Payment OK,120,30,edge B max
+29,B,Payment OK,121,30,over B max
+30,A,Payment OK,0,5,global underflow
+31,A,Payment OK,100,5,global max
+32,A,Payment OK,101,5,global overflow
+33,A,Payment OK,20,,missing tax
+34,A,Payment OK,20,NaN,missing tax
+35,A,Payment OK,20,5,!bad
+36,A,Payment OK,20,5,ends?
+37,A,Payment OK,20,5,bad error
+38,A,Payment OK,20,5,!error?
+39,A,Payment OK,20,5,error
+40,A,Payment OK,20,5,bad
+41,A,Payment OK,20,5,good
+42,B,Payment OK,80,15,good
+43,B,Payment OK,80,15,good
+44,B,Payment OK,80,15,good
+45,B,Payment OK,80,15,good
+
+,,,

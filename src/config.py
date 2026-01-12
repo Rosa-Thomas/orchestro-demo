@@ -1,64 +1,102 @@
+# This config is designed to stress-test the cleaning engine
+
 DEFAULT_BEHAVIOR = {
     "string": {
-        "violation": "flag",
+        "violation": "flag",     # default: strings are flagged
     },
     "numeric": {
-        "bounds": "clip",
-        "missing": "ignore",
+        "bounds": "clip",       # default: numbers get clipped
+        "missing": "flag",      # default: missing numbers get flagged
     }
 }
 
+
 COLUMNS = {
+
+    # Should never be missing; tests missing+remove
     "ID": {
         "type": "numeric",
         "rules": {
-            "fill_na": "remove",
+            "fill_na": "ignore",
+        },
+        "behavior": {
+            "missing": "remove",
         }
     },
+
+    # Tests whitelist + override remove
     "Category": {
         "type": "string",
         "rules": {
-            "white_list": ["A", "B", "C"],
+            "white_list": ["A", "B"],
+            "contains": ["X"],      # conflicting: something could be A but still contain X
         },
         "behavior": {
             "violation": "remove"
         }
     },
+
+    # Tests blacklist + regex + default flagging
     "Description": {
         "type": "string",
         "rules": {
-            "black_list": ["Invalid", "Unknown", "Chargeback"],
+            "black_list": ["Invalid", "Chargeback"],
+            "regex": ["^ERR", ".*FAIL.*"],
+            "contains": ["test"],
+        }
+        # no behavior → uses DEFAULT_BEHAVIOR (flag)
+    },
+
+    # Tests overlapping numeric bounds
+    "Amount": {
+        "type": "numeric",
+        "rules": {
+            "bounds": (0, 100),
+            "category_bounds": {
+                "A": (10, 50),
+                "B": (40, 120),   # overlaps global bounds
+            }
+        },
+        "behavior": {
+            "bounds": "remove"   # override default clip
+        }
+    },
+
+    # Tests missing numeric default behavior (flag)
+    "Tax": {
+        "type": "numeric",
+        "rules": {
+            "bounds": (0, 30)
+        }
+        # missing behavior → uses DEFAULT_BEHAVIOR
+    },
+
+    # Tests string rules that overlap heavily
+    "Notes": {
+        "type": "string",
+        "rules": {
+            "contains": ["bad", "error"],
+            "starts_with": ["!"],
+            "ends_with": ["?"],
         },
         "behavior": {
             "violation": "flag"
         }
-    },
-    "Amount": {
-        "type": "numeric",
-        "rules": {
-            "fill_na": "remove",
-            "bounds": (0, 200),
-            "category_bounds": {
-                "A": (50, 200),
-                "B": (100, 250),
-            }
-        },
-        "behavior": {
-            "bounds": "remove",
-            "missing": "remove",
-        }
     }
 }
+
 
 REMOVAL_REASON_COLUMN = "Removal Reason"
 FLAG_REASON_COLUMN = "Flag Reason"
 
+
 SORTING = {
     "default": {
-        "columns": ["Category", "Amount"],
-        "ascending": [True, True],
+        "columns": ["Category", "Amount", "ID"],
+        "ascending": [True, False, True],
     }
 }
+
 
 DEFAULT_PATHS = {
     "input": "data/raw/sample_data.csv",

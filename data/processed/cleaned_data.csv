@@ -1,12 +1,29 @@
-ID,Category,Amount,Description,Removal Reason,Flag Reason
-9,A,80.0,Chargeback,,Description: in blacklist
-16,A,95.0,Payment,,
-1,A,100.0,Payment,,
-13,A,100.0,Payment,,
-8,A,120.0,Payment,,
-18,B,180.0,Refund,,
-2,B,200.0,Refund,,
-19,C,140.0,Purchase,,
-3,C,150.0,Purchase,,
-11,C,160.0,Purchase,,
-7,C,175.0,Purchase,,
+ID,Category,Description,Amount,Tax,Notes,Removal Reason,Flag Reason
+21.0,A,Payment OK,45.0,25.0,ok,,
+11.0,A,ERR001 Payment,40.0,5.0,regex fail,,Description: matches regex '^ERR'
+13.0,A,test payment,40.0,5.0,contains test,,Description: contains 'test'
+9.0,A,Invalid,30.0,5.0,blacklisted description,,Description: in blacklist
+1.0,A,Payment OK,25.0,10.0,all good,,
+33.0,A,Payment OK,20.0,,missing tax,,Tax: missing value
+34.0,A,Payment OK,20.0,,missing tax,,Tax: missing value
+35.0,A,Payment OK,20.0,5.0,!bad,,Notes: contains 'bad' | Notes: starts with '!'
+36.0,A,Payment OK,20.0,5.0,ends?,,Notes: ends with '?'
+37.0,A,Payment OK,20.0,5.0,bad error,,Notes: contains 'bad' | Notes: contains 'error'
+38.0,A,Payment OK,20.0,5.0,!error?,,Notes: contains 'error' | Notes: starts with '!' | Notes: ends with '?'
+39.0,A,Payment OK,20.0,5.0,error,,Notes: contains 'error'
+40.0,A,Payment OK,20.0,5.0,bad,,Notes: contains 'bad'
+41.0,A,Payment OK,20.0,5.0,good,,
+20.0,A,Payment OK,15.0,30.0,tax too high,,
+26.0,A,Payment OK,10.0,0.0,edge valid,,
+7.0,A,Payment OK,,5.0,missing amount,,Amount: missing value
+6.0,B,Payment OK,80.0,,missing tax,,Tax: missing value
+42.0,B,Payment OK,80.0,15.0,good,,
+43.0,B,Payment OK,80.0,15.0,good,,
+44.0,B,Payment OK,80.0,15.0,good,,
+45.0,B,Payment OK,80.0,15.0,good,,
+2.0,B,Payment OK,60.0,15.0,normal,,
+10.0,B,Chargeback,50.0,10.0,blacklisted description,,Description: in blacklist
+12.0,B,Payment FAIL,50.0,5.0,regex fail,,Description: matches regex '.*FAIL.*'
+18.0,B,Payment OK,50.0,5.0,!starts bad,,Notes: contains 'bad' | Notes: starts with '!'
+19.0,B,Payment OK,50.0,5.0,ends bad?,,Notes: contains 'bad' | Notes: ends with '?'
+27.0,B,Payment OK,40.0,30.0,edge valid,,
